@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="userMapper">
+    <!-- 查询操作 -->
+    <select id="findAll" resultType="com.example.domain.User">
+        select * from User
+    </select>
+
+    <!-- 插入操作 -->
+    <insert id="save" parameterType="com.example.domain.User">
+        <!-- 这里填入的不是？占位符，是实体类对应的属性名 -->
+        insert into user values (#{id},#{username},#{password})
+    </insert>
+
+    <!-- 修改操作 -->
+    <update id="update" parameterType="com.example.domain.User">
+        update user set username=#{username}, password=#{password} where id=#{id}
+    </update>
+
+    <!-- 删除操作 -->
+    <delete id="delete" parameterType="java.lang.Integer">
+        delete from user where id=#{id}
+    </delete>
+</mapper>
