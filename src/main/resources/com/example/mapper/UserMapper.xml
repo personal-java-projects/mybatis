@@ -2,10 +2,18 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 这里的namespace当使用代理开发方式时，需要改为对应的javaMapper的全限定名
+ 这里是com.example.proxyDao.UserMapper-->
 <mapper namespace="userMapper">
     <!-- 查询操作 -->
-    <select id="findAll" resultType="com.example.domain.User">
+    <select id="findAll" resultType="User">
         select * from User
+    </select>
+
+    <!-- 根据id,查询操作 -->
+    <select id="findById" resultType="User" parameterType="java.lang.Integer">
+        select * from User where id=#{id}
     </select>
 
     <!-- 插入操作 -->
@@ -20,7 +28,7 @@
     </update>
 
     <!-- 删除操作 -->
-    <delete id="delete" parameterType="java.lang.Integer">
+    <delete id="delete" parameterType="int">
         delete from user where id=#{id}
     </delete>
 </mapper>

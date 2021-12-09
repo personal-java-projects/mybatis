@@ -3,20 +3,34 @@
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 
 <configuration>
+    <!-- 加载db.properties -->
+    <properties resource="db.properties"></properties>
+
+    <!-- 自定义别名,必须放在这里，configuration内部标签有先后顺序 -->
+    <typeAliases>
+        <typeAlias type="com.example.domain.User" alias="User" />
+    </typeAliases>
+
+    <!-- 配置类型处理器 -->
+    <typeHandlers>
+        <typeHandler handler="com.example.handler.DateTypeHandler"></typeHandler>
+    </typeHandlers>
     <!-- 数据源环境 -->
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC"></transactionManager>
             <dataSource type="POOLED">
-                <property name="driver" value="com.mysql.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql://localhost:3306/test"/>
-                <property name="username" value="root"/>
-                <property name="password" value="root"/>
+                <property name="driver" value="${db.driver}"/>
+                <property name="url" value="${db.url}"/>
+                <property name="username" value="${db.username}"/>
+                <property name="password" value="${db.password}"/>
             </dataSource>
         </environment>
     </environments>
 
+    <!-- 加载映射文件 -->
     <mappers>
         <mapper resource="com/example/mapper/UserMapper.xml"/>
+        <mapper resource="com/example/proxyMapper/UserMapper.xml" />
     </mappers>
 </configuration>
