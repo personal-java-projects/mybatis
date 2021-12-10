@@ -779,10 +779,12 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
 
 ```xml
 <!-- 注意：分页助手的插件 配置在通用馆mapper之前 -->
-<plugin interceptor="com.github.pagehelper.PageHelper">
-    <!-- 指定方言 -->
-    <property name="dialect" value="mysql"/>
-</plugin>
+<plugins>
+    <plugin interceptor="com.github.pagehelper.PageHelper">
+        <!-- 指定方言 -->
+        <property name="dialect" value="mysql"/>
+    </plugin>
+</plugins>
 ```
 
 
@@ -792,11 +794,11 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
 ```java
 @Test
 public void testPageHelper(){
-    //设置分页参数
-    PageHelper.startPage(1,2);
-    List<User> select = userMapper2.select(null);
+    //设置分页参数 当前页+每页显示的条数
+    PageHelper.startPage(1, 2);
+    List<User> userList = userMapper.findAll();
     
-    for(User user : select){
+    for(User user : userList){
     	System.out.println(user);
     }
 }
@@ -806,11 +808,13 @@ public void testPageHelper(){
 
 ```java
 //其他分页的数据
-PageInfo<User> pageInfo = new PageInfo<User>(select);
+PageInfo<User> pageInfo = new PageInfo<User>(userList);
 System.out.println("总条数："+pageInfo.getTotal());
 System.out.println("总页数："+pageInfo.getPages());
 System.out.println("当前页："+pageInfo.getPageNum());
-System.out.println("每页显示长度："+pageInfo.getPageSize());
+System.out.println("上一页："+pageInfo.getPrePage());
+System.out.println("下一页："+pageInfo.getNextPage());
+System.out.println("每页显示的总条数："+pageInfo.getPageSize());
 System.out.println("是否第一页："+pageInfo.isIsFirstPage());
 System.out.println("是否最后一页："+pageInfo.isIsLastPage());
 ```
@@ -828,3 +832,665 @@ MyBatis核心配置文件常用标签：
 4、typeHandlers标签：配置自定义类型处理器 
 
 5、plugins标签：配置MyBatis的插件
+
+## Mybatis多表查询
+
+#### 1、一对一查询
+
+1. 一对一查询的模型
+
+   用户表和订单表的关系为，一个用户有多个订单，一个订单只从属于一个用户 一对一查询的需求：查询一个订单，与此同时查询出该订单所属的用户
+
+   ![image-20211210093258007](image-20211210093258007.png)
+
+2. 一对一查询的语句
+
+   对应的sql语句：select * from orders o,user u where o.uid=u.id; 
+
+   查询的结果如下：
+
+   ![image-20211210093343299](image-20211210093343299.png)
+
+3. 创建Order和User实体
+
+   ```java
+   public class Order {
+       private int id;
+       private Date ordertime;
+       private double total;
+       
+       //代表当前订单从属于哪一个客户
+       private User user;
+   }
+   ```
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+   }
+   ```
+
+   
+
+4. 创建OrderMapper接口
+
+   ```java
+   public interface OrderMapper {
+   	List<Order> findAll();
+   }
+   ```
+
+5. 配置OrderMapper.xml
+
+   ```xml
+   <mapper namespace="com.example.mapper.OrderMapper">
+       <resultMap id="orderMap" type="com.example.domain.Order">
+           <result column="uid" property="user.id"></result>
+           <result column="username" property="user.username"></result>
+           <result column="password" property="user.password"></result>
+           <result column="birthday" property="user.birthday"></result>
+       </resultMap>
+       <select id="findAll" resultMap="orderMap">
+       	select * from orders o,user u where o.uid=u.id
+       </select>
+   </mapper>
+   ```
+
+   其中`<resultMap>`还可以配置如下:
+
+   ```xml
+   <resultMap id="orderMap" type="com.example.domain.Order">
+       <result property="id" column="id"></result>
+       <result property="ordertime" column="ordertime"></result>
+       <result property="total" column="total"></result>
+       
+       <association property="user" javaType="com.example.domain.User">
+           <result column="uid" property="id"></result>
+           <result column="username" property="username"></result>
+           <result column="password" property="password"></result>
+           <result column="birthday" property="birthday"></result>
+       </association>
+   </resultMap>
+   ```
+
+6. 测试结果
+
+   ```java
+   OrderMapper mapper = sqlSession.getMapper(OrderMapper.class);
+   List<Order> all = mapper.findAll();
+   
+   for(Order order : all){
+   	System.out.println(order);
+   }
+   ```
+
+   ![image-20211210094634025](image-20211210094634025.png)
+
+#### 2、一对多查询
+
+1. 一对多查询的模型
+
+   用户表和订单表的关系为，一个用户有多个订单，一个订单只从属于一个用户 一对多查询的需求：查询一个用户，与此同时查询出该用户具有的订单
+
+   ![image-20211210094736280](image-20211210094736280.png)
+
+2. 一对多查询的语句
+
+   对应的sql语句：select *,o.id oid from user u left join orders o on u.id=o.uid; 
+
+   查询的结果如下：
+
+   ![image-20211210094828157](image-20211210094828157.png)
+
+3. 修改User实体
+
+   ```java
+   public class Order {
+       private int id;
+       private Date ordertime;
+       private double total;
+       
+       //代表当前订单从属于哪一个客户
+       private User user;
+   }
+   ```
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+       
+       //代表当前用户具备哪些订单
+       private List<Order> orderList;
+   }
+   ```
+
+4. 创建UserMapper接口
+
+   ```java
+   public interface UserMapper {
+   	List<User> findAll();
+   }
+   ```
+
+5. 配置UserMapper.xml
+
+   ```xml
+   <mapper namespace="com.example.mapper.UserMapper">
+       <resultMap id="userMap" type="com.example.domain.User">
+           <result column="id" property="id"></result>
+           <result column="username" property="username"></result>
+           <result column="password" property="password"></result>
+           <result column="birthday" property="birthday"></result>
+           
+           <collection property="orderList" ofType="com.example.domain.Order">
+               <result column="oid" property="id"></result>
+               <result column="ordertime" property="ordertime"></result>
+               <result column="total" property="total"></result>
+           </collection>
+       </resultMap>
+       
+       <select id="findAll" resultMap="userMap">
+       select *,o.id oid from user u left join orders o on u.id=o.uid
+       </select>
+   </mapper>
+   ```
+
+6. 测试结果
+
+   ```java
+   UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   List<User> all = mapper.findAll();
+   for(User user : all){
+       System.out.println(user.getUsername());
+       List<Order> orderList = user.getOrderList();
+       
+       for(Order order : orderList){
+       	System.out.println(order);
+       }
+   	System.out.println("----------------------------------");
+   }
+   ```
+
+   ![image-20211210095348172](image-20211210095348172.png)
+
+#### 3、多对多查询
+
+1. 多对多查询的模型
+
+   用户表和角色表的关系为，一个用户有多个角色，一个角色被多个用户使用 多对多查询的需求：查询用户同时查询出该用户的所有角色
+
+   ![image-20211210095444870](image-20211210095444870.png)
+
+2.  多对多查询的语句
+
+   对应的sql语句：select u.*,r.*,r.id rid from user u left join user_role ur on u.id=ur.user_id inner join role r on ur.role_id=r.id;
+
+   查询的结果如下：
+
+   ![image-20211210095536365](image-20211210095536365.png)
+
+3. 创建Role实体，修改User实体
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+       
+       //代表当前用户具备哪些订单
+       private List<Order> orderList;
+       //代表当前用户具备哪些角色
+       private List<Role> roleList;
+   }
+   ```
+
+   ```java
+   public class Role {
+       private int id;
+       private String rolename;
+   }
+   ```
+
+4.  添加UserMapper接口方法
+
+   ```java
+   List findAllUserAndRole();
+   ```
+
+5. 配置UserMapper.xml
+
+   ```xml
+   <resultMap id="userRoleMap" type="com.example.domain.User">
+       <result column="id" property="id"></result>
+       <result column="username" property="username"></result>
+       <result column="password" property="password"></result>
+       <result column="birthday" property="birthday"></result>
+       <collection property="roleList" ofType="com.example.domain.Role">
+           <result column="rid" property="id"></result>
+           <result column="rolename" property="rolename"></result>
+   	</collection>
+   </resultMap>
+   
+   <select id="findAllUserAndRole" resultMap="userRoleMap">
+   select u.*,r.*,r.id rid from user u left join user_role ur on 
+   u.id=ur.user_id
+   inner join role r on ur.role_id=r.id
+   </select>
+   ```
+
+6. 测试结果
+
+   ```java
+   UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   List<User> all = mapper.findAllUserAndRole();
+   
+   for(User user : all){
+       System.out.println(user.getUsername());
+       List<Role> roleList = user.getRoleList();
+       
+       for(Role role : roleList){
+       	System.out.println(role);
+       }
+       System.out.println("----------------------------------");
+   }
+   ```
+
+   ![image-20211210100120187](image-20211210100120187.png)
+
+#### 4、知识小结
+
+MyBatis多表配置方式： 
+
+一对一配置：使用做配置 
+
+一对多配置：使用+做配置 多对多配置：使用+做配置
+
+## Mybatis的注解开发
+
+#### 1、MyBatis的常用注解
+
+这几年来注解开发越来越流行，Mybatis也可以使用注解开发方式，这样我们就可以减少编写Mapper 映射文件了。我们先围绕一些基本的CRUD来学习，再学习复杂映射多表操作。
+
+@Insert：实现新增 
+
+@Update：实现更新 
+
+@Delete：实现删除 
+
+@Select：实现查询 
+
+@Result：实现结果集封装 
+
+@Results：可以与@Result 一起使用，封装多个结果集 
+
+@One：实现一对一结果集封装 
+
+@Many：实现一对多结果集封装
+
+#### 2、MyBatis的增删改查
+
+我们完成简单的user表的增删改查的操作
+
+```java
+public class AnnoMapperTest {
+
+    private UserMapper userMapper;
+
+    @Before
+    public void before() throws IOException {
+        InputStream resourceAsStream = Resources.getResourceAsStream("SqlMapConfig.xml");
+        SqlSessionFactory sqlSessionFactory = new
+                SqlSessionFactoryBuilder().build(resourceAsStream);
+        SqlSession sqlSession = sqlSessionFactory.openSession(true);
+
+        userMapper = sqlSession.getMapper(UserMapper.class);
+    }
+
+    @Test
+    public void testAdd() {
+        User user = new User();
+        user.setUsername("测试数据");
+        user.setPassword("123");
+        user.setBirthday(new Date());
+        userMapper.save(user);
+    }
+
+    @Test
+    public void testUpdate() throws IOException {
+        User user = new User();
+        user.setId(7);
+        user.setUsername("测试数据修改");
+        user.setPassword("abc");
+        user.setBirthday(new Date());
+        userMapper.update(user);
+    }
+
+    @Test
+    public void testDelete() throws IOException {
+        userMapper.delete(5);
+    }
+
+    @Test
+    public void testFindById() throws IOException {
+        User user = userMapper.findById(3);
+        System.out.println(user);
+    }
+
+    @Test
+    public void testFindAll() throws IOException {
+        List<User> all = userMapper.findAll();
+        for(User user : all){
+            System.out.println(user);
+        }
+    }
+}
+```
+
+修改MyBatis的核心配置文件，我们使用了注解替代的映射文件，所以我们只需要加载使用了注解的Mapper接口即可
+
+```xml
+<mappers>
+    <!--扫描使用注解的类-->
+    <mapper class="com.example.annoMapper.UserMapper"></mapper>
+</mappers>
+```
+
+或者指定扫描包含映射关系的接口所在的包也可以
+
+```xml
+<mappers>
+    <!--扫描使用注解的类所在的包-->
+    <package name="com.example.annoMapper"></package>
+</mappers>
+```
+
+#### 3、 MyBatis的注解实现复杂映射开发
+
+实现复杂关系映射之前我们可以在映射文件中通过配置来实现，使用注解开发后，我们可以使用`@Results`注解 ，`@Result`注解，`@One`注解，`@Many`注解组合完成复杂关系的配置
+
+![image-20211210111411585](image-20211210111411585.png)
+
+![image-20211210111537059](image-20211210111537059.png)
+
+#### 4、一对一查询
+
+1. 一对一查询的模型
+
+   用户表和订单表的关系为，一个用户有多个订单，一个订单只从属于一个用户 一对一查询的需求：查询一个订单，与此同时查询出该订单所属的用户
+
+   ![image-20211210111640252](image-20211210111640252.png)
+
+2. 一对一查询的语句
+
+   对应的sql语句： select * from orders; select * from user where id=查询出订单的uid;
+
+   查询的结果如下：
+
+   ![image-20211210111734831](image-20211210111734831.png)
+
+3. 创建Order和User实体
+
+   ```java
+   public class Order {
+       private int id;
+       private Date ordertime;
+       private double total;
+       
+       //代表当前订单从属于哪一个客户
+       private User user;
+   }
+   ```
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+   }
+   ```
+
+4. 创建OrderMapper接口
+
+   ```java
+   public interface OrderMapper {
+   	List<Order> findAll();
+   }
+   ```
+
+5. 使用注解配置Mapper
+
+   ![image-20211210111920755](image-20211210111920755.png)
+
+   ```java
+   public interface OrderMapper {
+       @Select("select * from orders")
+       @Results({
+           @Result(id=true,property = "id",column = "id"),
+           @Result(property = "ordertime",column = "ordertime"),
+           @Result(property = "total",column = "total"),
+           @Result(property = "user",column = "uid",
+           javaType = User.class,
+           one = @One(select = "com.example.mapper.UserMapper.findById"))
+       })
+       
+       List<Order> findAll();
+   }
+   ```
+
+   ```java
+   public interface UserMapper {
+       @Select("select * from user where id=#{id}")
+       User findById(int id);
+   }
+   ```
+
+6. 测试结果
+
+   ```java
+   @Test
+   public void testSelectOrderAndUser() {
+       List<Order> all = orderMapper.findAll();
+       
+       for(Order order : all){
+       	System.out.println(order);
+       }
+   }
+   ```
+
+   ![image-20211210112205625](image-20211210112205625.png)
+
+#### 5、一对多查询
+
+1. 一对多查询的模型
+
+   用户表和订单表的关系为，一个用户有多个订单，一个订单只从属于一个用户 一对多查询的需求：查询一个用户，与此同时查询出该用户具有的订单
+
+   ![image-20211210112315538](image-20211210112315538.png)
+
+2. 一对多查询的语句
+
+   对应的sql语句： `select * from user; select * from orders where uid=查询出用户的id;`
+
+   查询的结果如下：
+
+   ![image-20211210112406121](image-20211210112406121.png)
+
+3. 修改User实体
+
+   ```java
+   public class Order {
+       private int id;
+       private Date ordertime;
+       private double total;
+       
+       //代表当前订单从属于哪一个客户
+       private User user;
+   }
+   ```
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+       
+       //代表当前用户具备哪些订单
+       private List<Order> orderList;
+   }
+   ```
+
+4. 创建UserMapper接口
+
+   ```java
+   List<User> findAllUserAndOrder();
+   ```
+
+5.  使用注解配置Mapper
+
+   ![image-20211210112605004](image-20211210112605004.png)
+
+   ```java
+   public interface UserMapper {
+       @Select("select * from user")
+       @Results({
+           @Result(id = true,property = "id",column = "id"),
+           @Result(property = "username",column = "username"),
+           @Result(property = "password",column = "password"),
+           @Result(property = "birthday",column = "birthday"),
+           @Result(property = "orderList",column = "id",
+           javaType = List.class,
+           many = @Many(select = "com.example.annoMapper.OrderMapper.findByUid"))
+       })
+       List<User> findAllUserAndOrder();
+   }
+   ```
+
+   ```java
+   public interface OrderMapper {
+       @Select("select * from orders where uid=#{uid}")
+       List<Order> findByUid(int uid);
+   }
+   ```
+
+   
+
+6.  测试结果
+
+   ```java
+   List<User> all = userMapper.findAllUserAndOrder();
+   
+   for(User user : all){
+       System.out.println(user.getUsername());
+       List<Order> orderList = user.getOrderList();
+       for(Order order : orderList){
+       	System.out.println(order);
+       }
+       System.out.println("-----------------------------");
+   }
+   ```
+
+   ![image-20211210112813497](image-20211210112813497.png)
+
+#### 6、多对多查询
+
+1. 多对多查询的模型
+
+   用户表和角色表的关系为，一个用户有多个角色，一个角色被多个用户使用 多对多查询的需求：查询用户同时查询出该用户的所有角色
+
+   ![image-20211210112910712](image-20211210112910712.png)
+
+2. 多对多查询的语句
+
+   对应的sql语句：
+
+   ```sql
+   select * from user; 
+   select * from role r,user_role ur where r.id=ur.role_id and ur.user_id=用户的id
+   ```
+
+   查询的结果如下：
+
+   ![image-20211210113129694](image-20211210113129694.png)
+
+3. 创建Role实体，修改User实体
+
+   ```java
+   public class User {
+       private int id;
+       private String username;
+       private String password;
+       private Date birthday;
+       //代表当前用户具备哪些订单
+       private List<Order> orderList;
+       //代表当前用户具备哪些角色
+       private List<Role> roleList;
+   }
+   ```
+
+   ```java
+   public class Role {
+       private int id;
+       private String rolename;
+   }
+   ```
+
+4. 添加UserMapper接口方法
+
+   ```java
+   List<User> findAllUserAndRole();
+   ```
+
+5. 使用注解配置Mapper
+
+   ![image-20211210113324462](image-20211210113324462.png)
+
+   ```java
+   public interface UserMapper {
+       @Select("select * from user")
+       @Results({
+           @Result(id = true,property = "id",column = "id"),
+           @Result(property = "username",column = "username"),
+           @Result(property = "password",column = "password"),
+           @Result(property = "birthday",column = "birthday"),
+           @Result(property = "roleList",column = "id",
+           javaType = List.class,
+           many = @Many(select = "com.example.annoMapper.RoleMapper.findByUid"))
+       })
+       List<User> findAllUserAndRole();
+   }
+   ```
+
+   ```java
+   public interface RoleMapper {
+       @Select("select * from role r,user_role ur where r.id=ur.role_id and ur.user_id=#{uid}")
+       List<Role> findByUid(int uid);
+   }
+   ```
+
+6. 测试结果
+
+   ```java
+   UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   List<User> all = mapper.findAllUserAndRole();
+   
+   for(User user : all){
+       System.out.println(user.getUsername());
+       List<Role> roleList = user.getRoleList();
+       
+       for(Role role : roleList){
+       	System.out.println(role);
+       }
+       System.out.println("----------------------------------");
+   }
+   ```
+
+   ![image-20211210113758666](image-20211210113758666.png)
