@@ -4,21 +4,32 @@
 
 <configuration>
     <!-- 加载db.properties -->
-    <properties resource="db.properties"></properties>
+    <properties resource="db.properties"/>
 
     <!-- 自定义别名,必须放在这里，configuration内部标签有先后顺序 -->
     <typeAliases>
         <typeAlias type="com.example.domain.User" alias="User" />
+        <typeAlias type="com.example.domain.Order" alias="Order"/>
+        <typeAlias type="com.example.domain.Role" alias="Role"/>
     </typeAliases>
 
     <!-- 配置类型处理器 -->
     <typeHandlers>
-        <typeHandler handler="com.example.handler.DateTypeHandler"></typeHandler>
+        <typeHandler handler="com.example.handler.DateTypeHandler"/>
     </typeHandlers>
+
+    <!-- 注意：分页助手的插件 配置在通用馆mapper之前 -->
+    <plugins>
+        <plugin interceptor="com.github.pagehelper.PageHelper">
+            <!-- 指定方言 -->
+            <property name="dialect" value="mysql"/>
+        </plugin>
+    </plugins>
+
     <!-- 数据源环境 -->
     <environments default="development">
         <environment id="development">
-            <transactionManager type="JDBC"></transactionManager>
+            <transactionManager type="JDBC"/>
             <dataSource type="POOLED">
                 <property name="driver" value="${db.driver}"/>
                 <property name="url" value="${db.url}"/>
@@ -32,5 +43,6 @@
     <mappers>
         <mapper resource="com/example/mapper/UserMapper.xml"/>
         <mapper resource="com/example/proxyMapper/UserMapper.xml" />
+        <mapper resource="com/example/proxyMapper/OrderMapper.xml" />
     </mappers>
 </configuration>

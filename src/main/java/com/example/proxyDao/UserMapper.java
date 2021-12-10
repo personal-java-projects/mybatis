@@ -15,4 +15,8 @@ public interface UserMapper {
     List<User> findByIds(List<Integer> ids) throws IOException;
 
     void save(User user) throws IOException;
+
+    List<User> findAllByUserId() throws IOException;
+
+    List<User> findUserAndRoleAll() throws IOException;
 }

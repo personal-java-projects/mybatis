@@ -63,4 +63,43 @@
             </foreach>
         </where>
     </select>
+
+    <resultMap id="userMap" type="User">
+        <id column="uid" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="birthday" property="birthday"/>
+        <!--配置集合信息
+            property:集合名称
+            ofType：当前集合中的数据类型
+        -->
+        <collection property="orderList" ofType="Order">
+            <!--封装order的数据-->
+            <id column="oid" property="id"/>
+            <result column="ordertime" property="ordertime"/>
+            <result column="total" property="total"/>
+        </collection>
+    </resultMap>
+
+    <select id="findAllByUserId" resultMap="userMap">
+        select *,o.id oid from user u,orders o where u.id=o.uid
+    </select>
+
+    <resultMap id="userRoleMap" type="User">
+        <!--user的信息-->
+        <id column="userId" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="birthday" property="birthday"/>
+        <!--user内部的roleList信息-->
+        <collection property="roleList" ofType="Role">
+            <id column="roleId" property="id"/>
+            <result column="roleName" property="roleName"/>
+            <result column="roleDesc" property="roleDesc"/>
+        </collection>
+    </resultMap>
+
+    <select id="findUserAndRoleAll" resultMap="userRoleMap">
+        SELECT * FROM USER u,sys_user_role ur,sys_role r WHERE u.id=ur.userId AND ur.roleId=r.id
+    </select>
 </mapper>
