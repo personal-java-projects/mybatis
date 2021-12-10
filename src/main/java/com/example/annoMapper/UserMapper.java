@@ -32,7 +32,7 @@ public interface UserMapper {
                     property = "orderList",
                     column = "id",
                     javaType = List.class,
-                    many = @Many(select = "com.itheima.mapper.OrderMapper.findByUid")
+                    many = @Many(select = "com.example.annoMapper.OrderMapper.findByUid")
             )
     })
     public List<User> findUserAndOrderAll();
@@ -47,7 +47,7 @@ public interface UserMapper {
                     property = "roleList",
                     column = "id",
                     javaType = List.class,
-                    many = @Many(select = "com.itheima.mapper.RoleMapper.findByUid")
+                    many = @Many(select = "com.example.annoMapper.RoleMapper.findByUid")
             )
     })
     public List<User> findUserAndRoleAll();

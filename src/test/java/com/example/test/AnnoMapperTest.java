@@ -1,6 +1,9 @@
 package com.example.test;
 
+import com.example.annoMapper.OrderMapper;
 import com.example.annoMapper.UserMapper;
+import com.example.domain.Order;
+import com.example.domain.Role;
 import com.example.domain.User;
 
 import org.apache.ibatis.io.Resources;
@@ -19,6 +22,8 @@ public class AnnoMapperTest {
 
     private UserMapper userMapper;
 
+    private OrderMapper orderMapper;
+
     @Before
     public void before() throws IOException {
         InputStream resourceAsStream = Resources.getResourceAsStream("SqlMapConfig.xml");
@@ -27,6 +32,7 @@ public class AnnoMapperTest {
         SqlSession sqlSession = sqlSessionFactory.openSession(true);
 
         userMapper = sqlSession.getMapper(UserMapper.class);
+        orderMapper = sqlSession.getMapper(OrderMapper.class);
     }
 
     @Test
@@ -64,6 +70,44 @@ public class AnnoMapperTest {
         List<User> all = userMapper.findAll();
         for(User user : all){
             System.out.println(user);
+        }
+    }
+
+    @Test
+    public void testSelectOrderAndUser() {
+        List<Order> all = orderMapper.findAll();
+
+        for(Order order : all){
+            System.out.println(order);
+        }
+    }
+
+    @Test
+    public void testOneToManyOrderAndUser() {
+        List<User> all = userMapper.findUserAndOrderAll();
+
+        for(User user : all){
+            System.out.println(user.getUsername());
+            List<Order> orderList = user.getOrderList();
+            for(Order order : orderList){
+                System.out.println(order);
+            }
+            System.out.println("-----------------------------");
+        }
+    }
+
+    @Test
+    public void testManyToMany() {
+        List<User> all = userMapper.findUserAndRoleAll();
+
+        for(User user : all){
+            System.out.println(user.getUsername());
+            List<Role> roleList = user.getRoleList();
+
+            for(Role role : roleList){
+                System.out.println(role);
+            }
+            System.out.println("----------------------------------");
         }
     }
 }

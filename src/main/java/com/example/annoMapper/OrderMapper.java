@@ -29,7 +29,7 @@ public interface OrderMapper {
                     column = "uid", //根据那个字段去查询user表的数据
                     javaType = User.class, //要封装的实体类型
                     //select属性 代表查询那个接口的方法获得数据
-                    one = @One(select = "com.itheima.mapper.UserMapper.findById")
+                    one = @One(select = "com.example.annoMapper.UserMapper.findById")
             )
     })
     public List<Order> findAll();
