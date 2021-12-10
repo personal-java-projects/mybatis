@@ -44,5 +44,8 @@
         <mapper resource="com/example/mapper/UserMapper.xml"/>
         <mapper resource="com/example/proxyMapper/UserMapper.xml" />
         <mapper resource="com/example/proxyMapper/OrderMapper.xml" />
+
+        <!-- 注解方式 指定mapper接口所在的包 -->
+        <package name="com.example.annoMapper"></package>
     </mappers>
 </configuration>
